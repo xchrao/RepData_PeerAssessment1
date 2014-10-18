@@ -1,25 +1,85 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+## This is my assingment 1 markdown file.
+=========================================
+
+Load activity data.
+
+```{r}
+data<-read.csv("activity.csv",header=TRUE)
+library(dplyr)
+datatmp<-tbl_df(data)
+```
+
+Analysis 1 
+
+```{r}
+data1<-filter(datatmp,!is.na(steps))
+by_date<-group_by(data1,date)
+res1<-summarize(by_date,steps=sum(steps))
+hist(res1$steps)
+by_date_mean<-summarize(res1,mean=mean(steps))
+by_date_median<-summarize(res1,median=median(steps))
+
+```
+
+Mean toltal number of steps taken per day is `r by_date_mean`.
+Median total numer of steps taken per day is `r by_date_median`.
 
 
-## Loading and preprocessing the data
+Analysis 2
 
+```{r}
+by_interval<-group_by(data1,interval)
+res2<-summarize(by_interval,act=mean(steps))
+res2_max<-max(res2$act)
+plot(res2$interval,res2$act,"l")
+Inteval_max<-filter(res2,act==max(act))[1,1]
+```
+`Interval_max` has the max numerber of on average across all the days in the dataset, contains the maximum number of steps.
 
+Analysis 3
 
-## What is mean total number of steps taken per day?
+```{r}
+datafill<-datatmp
+for(i in 1:nrow(data)){
+        if(is.na(data[i,1])==TRUE){
+                datafill[i,1]=filter(res2,interval==data[i,3])[1,2] 
+        }   
+}
+datafill_by_date<-group_by(datafill,date)
+res1_fill<-summarize(datafill_by_date,steps=sum(steps))
+hist(res1_fill$steps)
 
+res1_fill_mean<-summarize(res1_fill,mean=mean(steps))
+res1_fill_median<-summarize(res1_fill,median=median(steps))
 
+datafill_by_interval<-group_by(data1,interval)
+res2_fill<-summarize(by_interval,act=mean(steps))
+plot(res2_fill$interval,res2$act,"l")
+```
 
-## What is the average daily activity pattern?
+Mean toltal number of steps taken per day using fill in data set is `r by_date_mean`.
+Median total numer of steps taken per day is using fill in data set `r by_date_median`.
+They are almost have no difference because we use the mean for that 5-minute interval.
 
+Analysis 4
 
+```{r}
+datafillweek<-datafill
+datafillweek$date<-as.factor(weekdays(as.Date(datafillweek$date)))
 
-## Imputing missing values
+levels(datafillweek$date)[levels(datafillweek$date)%in%c("星期六" ,"星期日")]<-"weekend"
+levels(datafillweek$date)[levels(datafillweek$date)%in%c( "星期二","星期三","星期四","星期五","星期一")]<-"weekday"
 
+res4_weekdaytmp<-filter(datafillweek,date=="weekday")
+res4_weekendtmp<-filter(datafillweek,date=="weekend")
+by_interval_weekday<-group_by(res4_weekdaytmp,interval)
+by_interval_weekend<-group_by(res4_weekendtmp,interval)
+res4_weekday<-summarize(by_interval_weekday,act=mean(steps))
+res4_weekend<-summarize(by_interval_weekend,act=mean(steps))
+par(mfrow = c(1, 2))
+plot(res4_weekday$interval,res2$act,"l")
+plot(res4_weekend$interval,res2$act,"l")
+```
 
+The weekday and weekend data are slightly different.
 
-## Are there differences in activity patterns between weekdays and weekends?
